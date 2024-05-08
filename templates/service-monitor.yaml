@@ -1,0 +1,22 @@
+---
+{{- if .Values.serviceMonitor.enabled -}}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+metadata:
+  name: {{ include "near-node.fullname" . }}
+  namespace: {{ include "near-node.namespace" . }}
+  labels:
+    {{- include "near-node.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "near-node.selectorLabels" . | nindent 6 }}
+  namespaceSelector:
+    matchNames:
+    - {{ include "near-node.namespace" . }}
+  endpoints:
+  - port: metrics
+    interval: {{ .Values.serviceMonitor.interval }}
+    path: {{ .Values.serviceMonitor.path }}
+{{- end }}

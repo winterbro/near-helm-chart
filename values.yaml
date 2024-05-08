@@ -1,0 +1,68 @@
+# Default values for near-node.
+nameOverride: null
+fullnameOverride: near-testnet
+namespaceOverride: near
+replicas: 1 # Multiple replicas not supported, create new instances of the chart
+
+# Blockchain specific configuration
+chain:
+  kind: "rpc" # "rpc" or "archive"
+  network: "testnet" # "mainnet" or "testnet"
+  binary: "neard"
+  homeDir: "/data/.near"
+  genesisURL: ""
+  syncFromSnapshot:
+    enabled: true
+    force: false
+
+  # Node configuration overrides
+  configOverrides:
+    rpc:
+      addr: "0.0.0.0:3030"
+      prometheus_addr: "0.0.0.0:8090"
+    network:
+      addr: "0.0.0.0:24567"
+      boot_nodes: "ed25519:4k9csx6zMiXy4waUvRMPTkEtAS2RFKLVScocR5HwN53P@34.73.25.182:24567,ed25519:4keFArc3M4SE1debUQWi3F1jiuFZSWThgVuA2Ja2p3Jv@34.94.158.10:24567,ed25519:D2t1KTLJuwKDhbcD9tMXcXaydMNykA99Cedz7SkJkdj2@35.234.138.23:24567,ed25519:CAzhtaUPrxCuwJoFzceebiThD9wBofzqqEMCiupZ4M3E@34.94.177.51:24567"
+      max_num_peers: 40
+      minimum_outbound_peers: 20
+
+# Pod configuration
+podTemplate:
+  image: "nearprotocol/nearcore:1.39.1"
+  imagePullPolicy: "Always"
+  resources:
+    requests:
+      cpu: "2"
+      memory: "16Gi"
+    limits:
+      cpu: "4"
+      memory: "32Gi"
+
+# Service configuration
+service:
+  p2pTemplate:
+    enabled: true
+    type: NodePort
+    port: 24567
+    nodePort: null
+  rpcTemplate:
+    enabled: true
+    type: ClusterIP
+    port: 3030
+    nodePort: null
+  metrics:
+    enabled: true
+    type: ClusterIP
+    port: 9090
+    nodePort: null
+
+serviceMonitor:
+  enabled: true
+  interval: 30s
+  path: /metrics
+
+# Persistent volume claim configuration
+volumeClaimTemplate:
+  enabled: true
+  storageClassName: "standard"
+  storageSize: "2000Gi" # Resizing existing PVCs is not supported and will require manual intervention

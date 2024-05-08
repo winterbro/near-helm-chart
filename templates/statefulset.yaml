@@ -1,0 +1,122 @@
+{{- $image := required ".Values.podTemplate.image is required." .Values.podTemplate.image -}}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "near-node.fullname" . }}
+  namespace: {{ include "near-node.namespace" . }}
+  labels:
+    {{- include "near-node.labels" . | nindent 4 }}
+spec:
+  serviceName: {{ include "near-node.fullname" . }}
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "near-node.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "near-node.selectorLabels" . | nindent 8 }}
+    spec:
+      initContainers:
+        - name: init-node
+          image: {{ $image }}
+          command:
+            - "sh"
+            - "-c"
+          args:
+            - |
+              set -e # Exit immediately if a command exits with a non-zero status
+              if [ -f "{{ .Values.chain.homeDir }}/genesis.json" ]; then
+                echo "Genesis file already present, skipping init."
+              else
+                {{ .Values.chain.binary }} --home {{ .Values.chain.homeDir }} init --chain-id {{ .Values.chain.network }} --download-genesis --download-config
+              fi
+          volumeMounts:
+            - name: pvc
+              mountPath: {{ .Values.chain.homeDir }}
+          resources:
+            requests:
+              cpu: {{ .Values.podTemplate.resources.requests.cpu }}
+              memory: {{ .Values.podTemplate.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.podTemplate.resources.limits.cpu }}
+              memory: {{ .Values.podTemplate.resources.limits.memory }}
+        {{- if .Values.chain.syncFromSnapshot.enabled }}
+        - name: download-snapshot
+          image: ubuntu:24.04
+          command:
+            - "sh"
+            - "-c"
+          args:
+            - |
+              set -e # Exit immediately if a command exits with a non-zero status
+              if [ "$(ls -A {{ .Values.chain.homeDir }}/data/*.sst 2>/dev/null)" ]; then
+                if [ {{ .Values.chain.syncFromSnapshot.force }} = "false" ]; then
+                  echo "Snapshot files already present, skipping download."
+                else
+                  echo "Forcing snapshot download..."
+                  rm -rf {{ .Values.chain.homeDir }}/data/*
+                  echo "Old snapshot files removed, starting download..."
+                  {{ include "near-node.snapshotScript" . | nindent 18 }}
+                fi
+              else
+                echo "No snapshot files found, starting download..."
+                {{ include "near-node.snapshotScript" . | nindent 14 }}
+              fi
+          volumeMounts:
+            - name: pvc
+              mountPath: "{{ .Values.chain.homeDir }}"
+          resources:
+            requests:
+              cpu: {{ .Values.podTemplate.resources.requests.cpu }}
+              memory: {{ .Values.podTemplate.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.podTemplate.resources.limits.cpu }}
+              memory: {{ .Values.podTemplate.resources.limits.memory }}
+        {{- end }}
+      containers:
+        - name: run-node
+          image: {{ $image }}
+          command:
+            - {{ .Values.chain.binary }}
+          args:
+            - --home
+            - {{ .Values.chain.homeDir }}
+            - run
+          ports:
+            - containerPort: {{ .Values.service.rpcTemplate.port }}
+            - containerPort: {{ .Values.service.p2pTemplate.port }}
+          volumeMounts:
+            - name: pvc
+              mountPath: {{ .Values.chain.homeDir }}
+            - name: config-volume
+              mountPath: "/tmp/config.json"
+          resources:
+            requests:
+              cpu: {{ .Values.podTemplate.resources.requests.cpu }}
+              memory: {{ .Values.podTemplate.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.podTemplate.resources.limits.cpu }}
+              memory: {{ .Values.podTemplate.resources.limits.memory }}
+      volumes:
+        - name: config-volume
+          configMap:
+            name: {{ include "near-node.fullname" . }}-config
+        {{- if not .Values.volumeClaimTemplate.enabled }}
+        - name: data
+          emptyDir: {}
+        {{- end }}
+  {{- if .Values.volumeClaimTemplate.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: pvc
+        namespace: {{ include "near-node.namespace" . }}
+      spec:
+        accessModes:
+          - "ReadWriteOnce"
+        resources:
+          requests:
+            storage: {{ .Values.volumeClaimTemplate.storageSize }}
+        storageClassName: {{ .Values.volumeClaimTemplate.storageClassName }}
+  {{- end }}

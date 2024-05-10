@@ -1,5 +1,5 @@
 apiVersion: v2
-name: near-node
-description: A Helm chart for deploying NEAR nodes
-version: 0.1.0
+name: near-protocol
+description: A Helm chart for deploying NEAR Protocol nodes
+version: 0.1.1
 appVersion: "1.0"

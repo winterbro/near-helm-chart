@@ -22,7 +22,7 @@ chain:
       prometheus_addr: "0.0.0.0:{{ .Values.service.metrics.port }}"
     network:
       addr: "0.0.0.0:{{ .Values.service.p2pTemplate.port }}"
-      boot_nodes: "ed25519:4k9csx6zMiXy4waUvRMPTkEtAS2RFKLVScocR5HwN53P@34.73.25.182:24567,ed25519:4keFArc3M4SE1debUQWi3F1jiuFZSWThgVuA2Ja2p3Jv@34.94.158.10:24567,ed25519:D2t1KTLJuwKDhbcD9tMXcXaydMNykA99Cedz7SkJkdj2@35.234.138.23:24567,ed25519:CAzhtaUPrxCuwJoFzceebiThD9wBofzqqEMCiupZ4M3E@34.94.177.51:24567"
+      boot_nodes: ""
 
 # Pod configuration
 podTemplate:

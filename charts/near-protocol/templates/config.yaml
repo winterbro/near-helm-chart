@@ -6,6 +6,14 @@ metadata:
   namespace: {{ include "near-node.namespace" . }}
 data:
   config.json: |
+    {{- define "near-node.config" -}}
+    {{- if eq .Values.chain.network "testnet" }}
+        {{- include "near-node.config.testnet" . | nindent 4 }}
+    {{- else }}
+        {{- include "near-node.config.mainnet" . | nindent 4 }}
+    {{- end }}
+    {{- end }}
+
     {{- $defaultConfigYaml := include "near-node.config" . | nindent 4 }}
     {{- $defaultConfig := $defaultConfigYaml | fromYaml }}
     {{- $overrides := .Values.chain.configOverrides | toYaml | fromYaml }}

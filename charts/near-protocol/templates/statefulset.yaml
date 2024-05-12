@@ -66,7 +66,7 @@ spec:
               fi
           volumeMounts:
             - name: pvc
-              mountPath: "{{ .Values.chain.homeDir }}"
+              mountPath: {{ .Values.chain.homeDir }}
           resources:
             requests:
               cpu: {{ .Values.podTemplate.resources.requests.cpu }}
@@ -91,7 +91,8 @@ spec:
             - name: pvc
               mountPath: {{ .Values.chain.homeDir }}
             - name: config-volume
-              mountPath: "/tmp/config.json"
+              mountPath: {{ .Values.chain.homeDir }}/config.json
+              subPath: config.json
           resources:
             requests:
               cpu: {{ .Values.podTemplate.resources.requests.cpu }}
@@ -103,6 +104,9 @@ spec:
         - name: config-volume
           configMap:
             name: {{ include "near-node.fullname" . }}-config
+            items:
+              - key: config.json
+                path: config.json
         {{- if not .Values.volumeClaimTemplate.enabled }}
         - name: data
           emptyDir: {}

@@ -37,21 +37,6 @@ spec:
       nodePort: {{ .Values.service.rpcTemplate.nodePort }}
       {{ end }}
       targetPort: {{ .Values.service.rpcTemplate.port }}
-  selector:
-    {{- include "near-node.selectorLabels" . | nindent 4 }}
-{{- end }}
----
-{{- if .Values.service.metrics.enabled }}
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ include "near-node.fullname" . }}-metrics
-  namespace: {{ include "near-node.namespace" . }}
-  labels:
-    {{- include "near-node.labels" . | nindent 4 }}
-spec:
-  type: {{ .Values.service.metrics.type }}
-  ports:
     - name: metrics
       port: {{ .Values.service.metrics.port }}
       {{ if .Values.service.metrics.nodePort }}

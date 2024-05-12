@@ -12,7 +12,9 @@ spec:
   ports:
     - name: p2p
       port: {{ .Values.service.p2pTemplate.port }}
+      {{ if .Values.service.p2pTemplate.nodePort }}
       nodePort: {{ .Values.service.p2pTemplate.nodePort }}
+      {{ end }}
       targetPort: {{ .Values.service.p2pTemplate.port }}
   selector:
     {{- include "near-node.selectorLabels" . | nindent 4 }}
@@ -31,7 +33,9 @@ spec:
   ports:
     - name: rpc
       port: {{ .Values.service.rpcTemplate.port }}
+      {{ if .Values.service.rpcTemplate.nodePort }}
       nodePort: {{ .Values.service.rpcTemplate.nodePort }}
+      {{ end }}
       targetPort: {{ .Values.service.rpcTemplate.port }}
   selector:
     {{- include "near-node.selectorLabels" . | nindent 4 }}
@@ -50,7 +54,9 @@ spec:
   ports:
     - name: metrics
       port: {{ .Values.service.metrics.port }}
+      {{ if .Values.service.metrics.nodePort }}
       nodePort: {{ .Values.service.metrics.nodePort }}
+      {{ end }}
       targetPort: {{ .Values.service.metrics.port }}
   selector:
     {{- include "near-node.selectorLabels" . | nindent 4 }}

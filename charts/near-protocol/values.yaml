@@ -18,11 +18,10 @@ chain:
   # Node configuration overrides
   configOverrides:
     rpc:
-      addr: "0.0.0.0:{{ .Values.service.rpcTemplate.port }}"
-      prometheus_addr: "0.0.0.0:{{ .Values.service.metrics.port }}"
+      addr: "0.0.0.0:3030"
+      prometheus_addr: "0.0.0.0:9090"
     network:
-      addr: "0.0.0.0:{{ .Values.service.p2pTemplate.port }}"
-      boot_nodes: ""
+      addr: "0.0.0.0:24567"
 
 # Pod configuration
 podTemplate:
@@ -57,7 +56,7 @@ service:
 serviceMonitor:
   enabled: true
   interval: 30s
-  path: /metrics
+  path: null
 
 # Persistent volume claim configuration
 volumeClaimTemplate:

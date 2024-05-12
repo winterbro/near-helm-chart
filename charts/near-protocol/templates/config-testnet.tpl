@@ -1,4 +1,4 @@
-{{- define "near-node.config" -}}
+{{- define "near-node.config.testnet" -}}
 genesis_file: genesis.json
 genesis_records_file:
 validator_key_file: validator_key.json
@@ -17,17 +17,17 @@ rpc:
       nanos: 0
   limits_config:
     json_payload_max_size: 10485760
-  enable_debug_rpc: false
+  enable_debug_rpc: true
   experimental_debug_pages_src_path:
 telemetry:
   endpoints:
-  - https://explorer.{{ .Values.chain.network }}.near.org/api/nodes
+  - https://explorer.testnet.near.org/api/nodes
   reporting_interval:
     secs: 10
     nanos: 0
 network:
   addr: 0.0.0.0:24567
-  boot_nodes: ed25519:86EtEy7epneKyrcJwSWP7zsisTkfDRH5CFVszt4qiQYw@35.195.32.249:24567,ed25519:BFB78VTDBBfCY4jCP99zWxhXUcFAZqR22oSx2KEr8UM1@35.229.222.235:24567,ed25519:Cw1YyiX9cybvz3yZcbYdG7oDV6D7Eihdfc8eM1e1KKoh@35.195.27.104:24567,ed25519:33g3PZRdDvzdRpRpFRZLyscJdbMxUA3j3Rf2ktSYwwF8@34.94.132.112:24567,ed25519:CDQFcD9bHUWdc31rDfRi4ZrJczxg8derCzybcac142tK@35.196.209.192:24567
+  boot_nodes: ed25519:4k9csx6zMiXy4waUvRMPTkEtAS2RFKLVScocR5HwN53P@34.73.25.182:24567,ed25519:4keFArc3M4SE1debUQWi3F1jiuFZSWThgVuA2Ja2p3Jv@34.94.158.10:24567,ed25519:D2t1KTLJuwKDhbcD9tMXcXaydMNykA99Cedz7SkJkdj2@35.234.138.23:24567,ed25519:CAzhtaUPrxCuwJoFzceebiThD9wBofzqqEMCiupZ4M3E@34.94.177.51:24567
   whitelist_nodes: ''
   max_num_peers: 40
   minimum_outbound_peers: 5
@@ -84,10 +84,10 @@ consensus:
     nanos: 100000000
   min_block_production_delay:
     secs: 1
-    nanos: 300000000
-  max_block_production_delay:
-    secs: 3
     nanos: 0
+  max_block_production_delay:
+    secs: 2
+    nanos: 500000000
   max_block_wait_delay:
     secs: 6
     nanos: 0
@@ -130,7 +130,7 @@ log_summary_style: colored
 log_summary_period:
   secs: 10
   nanos: 0
-enable_multiline_logging: false
+enable_multiline_logging: true
 gc_blocks_limit: 2
 gc_fork_clean_step: 100
 gc_num_epochs_to_keep: 5
@@ -141,25 +141,16 @@ view_client_throttle_period:
   nanos: 0
 trie_viewer_state_size_limit: 50000
 store:
-  path:
+  path: 
   enable_statistics: false
   enable_statistics_export: true
   max_open_files: 10000
-  col_state_cache_size: 3221225472
-  col_flat_state_cache_size: 134217728
+  col_state_cache_size: 536870912
   block_size: 16384
   trie_cache:
-    default_max_bytes: 500000000
+    default_max_bytes: 50000000
     per_shard_max_bytes:
-      s1.v1: 50000000
       s3.v1: 3000000000
-      s1.v2: 50000000
-      s2.v2: 3000000000
-      s4.v2: 3000000000
-      s1.v3: 50000000
-      s2.v3: 1500000000
-      s3.v3: 1500000000
-      s5.v3: 3000000000
     shard_cache_deletions_queue_capacity: 100000
   view_trie_cache:
     default_max_bytes: 50000000
@@ -179,12 +170,14 @@ store:
   - receiver: claim.sweat
     sender: ''
     method_name: claim
-  load_mem_tries_for_shards: []
-  load_mem_tries_for_tracked_shards: false
-  state_snapshot_config:
-    state_snapshot_type: ForReshardingOnly
+  background_migration_threads: 8
+  flat_storage_creation_enabled: true
+  flat_storage_creation_period:
+    secs: 1
+    nanos: 0
   state_snapshot_enabled: false
-state_sync_enabled: false
+  state_snapshot_compaction_enabled: false
+state_sync_enabled: true
 state_sync:
   sync:
     ExternalStorage:
@@ -194,4 +187,4 @@ state_sync:
       num_concurrent_requests: 25
       num_concurrent_requests_during_catchup: 5
 transaction_pool_size_limit: 100000000
-{{- end }}
+{{- end}}

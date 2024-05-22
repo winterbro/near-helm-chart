@@ -35,13 +35,6 @@ spec:
           volumeMounts:
             - name: pvc
               mountPath: {{ .Values.chain.homeDir }}
-          resources:
-            requests:
-              cpu: {{ .Values.podTemplate.resources.requests.cpu }}
-              memory: {{ .Values.podTemplate.resources.requests.memory }}
-            limits:
-              cpu: {{ .Values.podTemplate.resources.limits.cpu }}
-              memory: {{ .Values.podTemplate.resources.limits.memory }}
         {{- if .Values.chain.syncFromSnapshot.enabled }}
         - name: download-snapshot
           image: ubuntu:24.04
@@ -67,13 +60,6 @@ spec:
           volumeMounts:
             - name: pvc
               mountPath: {{ .Values.chain.homeDir }}
-          resources:
-            requests:
-              cpu: {{ .Values.podTemplate.resources.requests.cpu }}
-              memory: {{ .Values.podTemplate.resources.requests.memory }}
-            limits:
-              cpu: {{ .Values.podTemplate.resources.limits.cpu }}
-              memory: {{ .Values.podTemplate.resources.limits.memory }}
         {{- end }}
       containers:
         - name: run-node

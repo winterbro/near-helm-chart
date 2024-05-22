@@ -28,8 +28,10 @@ spec:
     - name: rpc
       port: {{ .Values.service.rpcTemplate.port }}
       targetPort: {{ .Values.service.rpcTemplate.port }}
+    {{ if .Values.service.metrics.enabled }}
     - name: metrics
       port: {{ .Values.service.metrics.port }}
       targetPort: {{ .Values.service.metrics.port }}
+    {{- end }}
   selector:
     {{- include "near-node.selectorLabels" . | nindent 4 }}

@@ -38,20 +38,15 @@ podTemplate:
 # Service configuration
 service:
   p2pTemplate:
-    enabled: true
     type: NodePort
-    port: 24567
-    nodePort: null
+    # port: 24567
   rpcTemplate:
-    enabled: true
     type: ClusterIP
     port: 3030
-    nodePort: null
   metrics:
     enabled: true
     type: ClusterIP
     port: 9090
-    nodePort: null
 
 serviceMonitor:
   enabled: true

@@ -141,7 +141,7 @@ view_client_throttle_period:
   nanos: 0
 trie_viewer_state_size_limit: 50000
 store:
-  path: 
+  path:
   enable_statistics: false
   enable_statistics_export: true
   max_open_files: 10000

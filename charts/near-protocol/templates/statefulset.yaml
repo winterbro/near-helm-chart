@@ -9,7 +9,7 @@ metadata:
     {{- include "near-node.labels" . | nindent 4 }}
 spec:
   serviceName: {{ include "near-node.fullname" . }}
-  replicas: 1
+  replicas: {{ .Values.replicas }}
   selector:
     matchLabels:
       {{- include "near-node.selectorLabels" . | nindent 6 }}

@@ -2,7 +2,7 @@
 nameOverride: null
 fullnameOverride: near-testnet
 namespaceOverride: near
-replicas: 1 # Multiple replicas not supported, create new instances of the chart
+replicas: 1
 
 # Blockchain specific configuration
 chain:

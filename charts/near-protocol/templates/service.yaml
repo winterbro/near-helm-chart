@@ -1,20 +1,23 @@
----
+{{- $replicaCount := .Values.replicas | int -}}
+{{- range $i := until $replicaCount }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "near-node.fullname" . }}-p2p
-  namespace: {{ include "near-node.namespace" . }}
+  name: {{ include "near-node.fullname" $ }}-p2p-{{ $i }}
+  namespace: {{ include "near-node.namespace" $ }}
   labels:
-    {{- include "near-node.labels" . | nindent 4 }}
+    {{- include "near-node.labels" $ | nindent 4 }}
 spec:
-  type: {{ .Values.service.p2pTemplate.type }}
+  type: {{ $.Values.service.p2pTemplate.type }}
   ports:
     - name: p2p
-      port: {{ .Values.service.p2pTemplate.port }}
-      targetPort: {{ .Values.service.p2pTemplate.port }}
+      port: {{ $.Values.service.p2pTemplate.port }}
+      targetPort: {{ $.Values.service.p2pTemplate.port }}
   selector:
-    {{- include "near-node.selectorLabels" . | nindent 4 }}
+    {{- include "near-node.selectorLabels" $ | nindent 4 }}
+    statefulset.kubernetes.io/pod-name: {{ include "near-node.fullname" $ }}-{{ $i }}
 ---
+{{- end }}
 apiVersion: v1
 kind: Service
 metadata:

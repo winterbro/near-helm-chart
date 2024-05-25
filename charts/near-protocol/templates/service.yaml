@@ -1,26 +1,23 @@
----
-{{- if .Values.service.p2pTemplate.enabled }}
+{{- $replicaCount := .Values.replicas | int -}}
+{{- range $i := until $replicaCount }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "near-node.fullname" . }}-p2p
-  namespace: {{ include "near-node.namespace" . }}
+  name: {{ include "near-node.fullname" $ }}-p2p-{{ $i }}
+  namespace: {{ include "near-node.namespace" $ }}
   labels:
-    {{- include "near-node.labels" . | nindent 4 }}
+    {{- include "near-node.labels" $ | nindent 4 }}
 spec:
-  type: {{ .Values.service.p2pTemplate.type }}
+  type: {{ $.Values.service.p2pTemplate.type }}
   ports:
     - name: p2p
-      port: {{ .Values.service.p2pTemplate.port }}
-      {{ if .Values.service.p2pTemplate.nodePort }}
-      nodePort: {{ .Values.service.p2pTemplate.nodePort }}
-      {{ end }}
-      targetPort: {{ .Values.service.p2pTemplate.port }}
+      port: {{ $.Values.service.p2pTemplate.port }}
+      targetPort: {{ $.Values.service.p2pTemplate.port }}
   selector:
-    {{- include "near-node.selectorLabels" . | nindent 4 }}
-{{- end }}
+    {{- include "near-node.selectorLabels" $ | nindent 4 }}
+    statefulset.kubernetes.io/pod-name: {{ include "near-node.fullname" $ }}-{{ $i }}
 ---
-{{- if .Values.service.rpcTemplate.enabled }}
+{{- end }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -33,16 +30,11 @@ spec:
   ports:
     - name: rpc
       port: {{ .Values.service.rpcTemplate.port }}
-      {{ if .Values.service.rpcTemplate.nodePort }}
-      nodePort: {{ .Values.service.rpcTemplate.nodePort }}
-      {{ end }}
       targetPort: {{ .Values.service.rpcTemplate.port }}
+    {{ if .Values.service.metrics.enabled }}
     - name: metrics
       port: {{ .Values.service.metrics.port }}
-      {{ if .Values.service.metrics.nodePort }}
-      nodePort: {{ .Values.service.metrics.nodePort }}
-      {{ end }}
       targetPort: {{ .Values.service.metrics.port }}
+    {{- end }}
   selector:
     {{- include "near-node.selectorLabels" . | nindent 4 }}
-{{- end }}

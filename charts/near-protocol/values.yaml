@@ -10,7 +10,6 @@ chain:
   network: "testnet" # "mainnet" or "testnet"
   binary: "neard"
   homeDir: "/data/.near"
-  genesisURL: ""
   syncFromSnapshot:
     enabled: true
     force: false

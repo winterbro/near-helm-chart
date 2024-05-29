@@ -14,8 +14,8 @@ data:
     {{- end }}
     {{- end }}
 
-    {{- $defaultConfigYaml := include "near-node.config" . | nindent 4 }}
-    {{- $defaultConfig := $defaultConfigYaml | fromYaml }}
-    {{- $overrides := .Values.chain.configOverrides | toYaml | fromYaml }}
-    {{- $mergedConfig := merge $defaultConfig $overrides | toJson }}
-    {{- $mergedConfig | nindent 4 }}
+    {{- $defaultConfigYaml := include "near-node.config" . }}
+    {{- $defaultConfig := fromYaml $defaultConfigYaml }}
+    {{- $overrides := .Values.chain.configOverrides }}
+    {{- $mergedConfig := mergeOverwrite $defaultConfig $overrides }}
+    {{- $mergedConfig | toJson | nindent 4 }}

@@ -3,6 +3,7 @@ nameOverride: null
 fullnameOverride: near-testnet
 namespaceOverride: near
 replicas: 1
+logLevel: info # debug, info, warn or error
 
 # Blockchain specific configuration
 chain:

@@ -84,6 +84,11 @@ spec:
             - --home
             - {{ .Values.chain.homeDir }}
             - run
+          {{- if .Values.logLevel }}
+          env:
+            - name: RUST_LOG
+              value: "{{ .Values.logLevel }}"
+          {{- end }}
           ports:
             - containerPort: {{ .Values.service.rpcTemplate.port }}
             - containerPort: {{ .Values.service.p2pTemplate.port }}

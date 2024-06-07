@@ -84,6 +84,66 @@ spec:
               cpu: {{ .Values.podTemplate.resources.limits.cpu }}
               memory: {{ .Values.podTemplate.resources.limits.memory }}
         {{- end }}
+        {{- if eq .Values.service.p2pTemplate.type "NodePort" }}
+        - name: configure-p2p
+          image: ubuntu:24.04
+          command:
+            - "sh"
+            - "-c"
+          args:
+            - |
+              set -e # Exit immediately if a command exits with a non-zero status
+              set -e
+
+              NAMESPACE={{ include "near-node.namespace" . }}
+              NAME={{ include "near-node.fullname" . }}
+
+              # Get the number of replicas from the CosmosFullNode spec
+              REPLICAS=$(kubectl get cosmosfullnode $NAME -n $NAMESPACE -o jsonpath='{.spec.replicas}')
+
+              for i in $(seq 0 $((REPLICAS-1))); do
+                CONFIGMAP_NAME=$NAME-$i
+                SERVICE_NAME=$NAME-p2p-$i
+                POD_NAME=$NAME-$i
+
+                # Wait until the ConfigMap is created
+                until kubectl get configmap $CONFIGMAP_NAME -n $NAMESPACE; do
+                  echo "Waiting for ConfigMap $CONFIGMAP_NAME to be created..."
+                  sleep 1
+                done
+
+                # Get the NodePort
+                NODE_PORT=$(kubectl get svc $SERVICE_NAME -o=jsonpath='{.spec.ports[0].nodePort}' -n $NAMESPACE)
+
+                # Check if NODE_PORT was set properly
+                if [ -z "$NODE_PORT" ]; then
+                  echo "NodePort not found for service $SERVICE_NAME. Exiting."
+                  exit 1
+                fi
+
+                # Get the current external_address value
+                CURRENT_EXTERNAL_ADDRESS=$(kubectl get configmap $CONFIGMAP_NAME -n $NAMESPACE -o jsonpath='{.data.config-overlay\.toml}' | grep -o 'external_address = ".*"')
+                echo "Current external_address for $CONFIGMAP_NAME: $CURRENT_EXTERNAL_ADDRESS"
+
+                # Check if the external_address needs to be updated
+                if [ "$CURRENT_EXTERNAL_ADDRESS" != "external_address = \"$IP_ADDRESS:$NODE_PORT\"" ]; then
+                  # Update the config map
+                  kubectl get configmap $CONFIGMAP_NAME -n $NAMESPACE -o yaml | sed "s/external_address = .*/external_address = \"$IP_ADDRESS:$NODE_PORT\"/" | kubectl apply -f -
+                else
+                  echo "ConfigMap $CONFIGMAP_NAME already has the correct external_address."
+                fi
+              done
+          volumeMounts:
+            - name: pvc
+              mountPath: {{ .Values.chain.homeDir }}
+          resources:
+            requests:
+              cpu: {{ .Values.podTemplate.resources.requests.cpu }}
+              memory: {{ .Values.podTemplate.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.podTemplate.resources.limits.cpu }}
+              memory: {{ .Values.podTemplate.resources.limits.memory }}
+        {{- end }}
       containers:
         - name: run-node
           image: {{ $image }}

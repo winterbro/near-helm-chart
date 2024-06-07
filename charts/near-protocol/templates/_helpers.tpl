@@ -58,19 +58,85 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
+Configuration for the store
+*/}}
+{{- define "near-node.store" -}}
+{{- if and .Values.chain.configOverrides .Values.chain.configOverrides.store .Values.chain.configOverrides.store.path -}}
+  {{ .Values.chain.configOverrides.store.path }}
+{{- else -}}
+  "data"
+{{- end -}}
+{{- end }}
+
+{{- define "near-node.coldStore" -}}
+{{- if and .Values.chain.configOverrides .Values.chain.configOverrides.cold_store .Values.chain.configOverrides.cold_store.path -}}
+  {{ .Values.chain.configOverrides.cold_store.path }}
+{{- else -}}
+  "cold-data"
+{{- end -}}
+{{- end }}
+
+{{/*
 Create the snapshot download script
 */}}
+{{- define "isSplitStorageEnabled" -}}
+{{- $chain := default dict .Values.chain -}}
+{{- $configOverrides := default dict $chain.configOverrides -}}
+{{- $splitStorage := default dict $configOverrides.split_storage -}}
+{{- default false $splitStorage.enable_split_storage_view_client -}}
+{{- end -}}
+
 {{- define "near-node.snapshotScript" -}}
+# Install and configure rclone
+echo "Installing and configuring rclone"
 apt update && apt install -y rclone
-# Create configuration
+
+RCLONE_CONFIG=$HOME/.config/rclone/rclone.conf
+
 mkdir -p $HOME/.config/rclone/
-touch $HOME/.config/rclone/rclone.conf
-printf "[near_cf]\ntype = s3\nprovider = AWS\ndownload_url = https://dcf58hz8pnro2.cloudfront.net/\nacl = public-read\nserver_side_encryption = AES256\nregion = ca-central-1\n" >> $HOME/.config/rclone/rclone.conf
-# Get the latest snapshot date
-rclone copy --config $HOME/.config/rclone/rclone.conf --no-check-certificate near_cf://near-protocol-public/backups/{{ .Values.chain.network }}/{{ .Values.chain.kind }}/latest {{ .Values.chain.homeDir }}/
-# Save the latest snapshot date to a variable
-latest=$(cat {{ .Values.chain.homeDir }}/latest)
-# Download the latest snapshot
-rclone copy --config $HOME/.config/rclone/rclone.conf --no-check-certificate --progress --transfers=20 \
-  near_cf://near-protocol-public/backups/{{ .Values.chain.network }}/{{ .Values.chain.kind }}/${latest:?} {{ .Values.chain.homeDir }}/data/
+touch $RCLONE_CONFIG
+printf "[near_cf]\ntype = s3\nprovider = AWS\ndownload_url = https://dcf58hz8pnro2.cloudfront.net/\nacl = public-read\nserver_side_encryption = AES256\nregion = ca-central-1\n" >> $RCLONE_CONFIG
+
+# Set node variables
+HOME_DIR="{{ .Values.chain.homeDir }}"
+NETWORK="{{ .Values.chain.network }}"
+KIND="{{ .Values.chain.kind }}"
+USE_SPLIT_STORAGE="{{- if include "isSplitStorageEnabled" . -}}true{{- else -}}false{{- end }}"
+STORE="{{ include "near-node.store" . }}"
+COLD_STORE="{{ include "near-node.coldStore" . }}"
+
+if $USE_SPLIT_STORAGE; then
+  echo "Geting date of the latest split storage snapshot"
+  rclone copy --config $RCLONE_CONFIG --no-check-certificate near_cf://near-protocol-public/backups/$NETWORK/$KIND/latest_split_storage $HOME_DIR/
+
+  latest=$(cat $HOME_DIR/latest_split_storage)
+  echo "Latest snapshot date: $latest"
+
+  echo "Downloading the latest snapshot"
+  rclone copy --config $RCLONE_CONFIG --no-check-certificate --progress --transfers=20 \
+    near_cf://near-protocol-public/backups/$NETWORK/$KIND/$latest $HOME_DIR/
+
+  # Move and create symlinks for data directories in case of future snapshot downloads
+  if $STORE != "hot-data"; then
+    mv $HOME_DIR/hot-data $HOME_DIR/$STORE
+    ln -s $HOME_DIR/hot-data $HOME_DIR/$STORE
+    echo "Moved hot-data to $STORE"
+  fi
+
+  if $COLD_STORE != "cold-data"; then
+    mv $HOME_DIR/cold-data $HOME_DIR/$COLD_STORE
+    ln -s $HOME_DIR/cold-data $HOME_DIR/$COLD_STORE
+    echo "Moved cold-data to $COLD_STORE"
+  fi
+else
+  echo "Getting date of the latest snapshot"
+  rclone copy --config $RCLONE_CONFIG --no-check-certificate near_cf://near-protocol-public/backups/$NETWORK/$KIND/latest $HOME_DIR/
+
+  latest=$(cat $HOME_DIR/latest)
+  echo "Latest snapshot date: $latest"
+
+  echo "Downloading the latest snapshot"
+  rclone copy --config $RCLONE_CONFIG --no-check-certificate --progress --transfers=20 \
+    near_cf://near-protocol-public/backups/$NETWORK/$KIND/$latest $HOME_DIR/$STORE/
+fi
 {{- end -}}

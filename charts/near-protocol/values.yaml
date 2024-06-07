@@ -7,15 +7,37 @@ logLevel: info # debug, info, warn or error
 
 # Blockchain specific configuration
 chain:
-  kind: "rpc" # "rpc" or "archive"
-  network: "testnet" # "mainnet" or "testnet"
-  binary: "neard"
-  homeDir: "/data/.near"
+  kind: rpc # rpc or archive
+  network: testnet # mainnet or testnet
+  binary: neard
+  homeDir: /data/.near
   syncFromSnapshot:
     enabled: true
     force: false
 
   # Node configuration overrides
+  configOverrides: {}
+    ## EXAMPLE: Set custom RPC and network configuration
+    # rpc:
+    #   addr: 0.0.0.0:3030
+    #   prometheus_addr: 0.0.0.0:9090
+    # network:
+    #   addr: 0.0.0.0:24567
+    #   max_num_peers: 20
+    #   minimum_outbound_peers: 5
+    #   ideal_connections_lo: 15
+    #   ideal_connections_hi: 20
+
+    ## EXAMPLE: Enable archive mode with split storage
+    # archive: true
+    # save_trie_changes: true
+    # store:
+    #   path: "hot-data"
+    # cold_store:
+    #   path: "cold-data"
+    # split_storage:
+    #   enable_split_storage_view_client: true
+
   configOverrides:
     rpc:
       addr: "0.0.0.0:3030"
@@ -25,21 +47,21 @@ chain:
 
 # Pod configuration
 podTemplate:
-  image: "nearprotocol/nearcore:1.39.1"
-  imagePullPolicy: "Always"
+  image: nearprotocol/nearcore:1.39.1
+  imagePullPolicy: Always
   resources:
     requests:
-      cpu: "2"
-      memory: "16Gi"
+      cpu: 1
+      memory: 12Gi
     limits:
-      cpu: "4"
-      memory: "32Gi"
+      cpu: 2
+      memory: 24Gi
 
 # Service configuration
 service:
   p2pTemplate:
     type: NodePort
-    # port: 24567
+    port: 24567
   rpcTemplate:
     type: ClusterIP
     port: 3030
@@ -49,12 +71,16 @@ service:
     port: 9090
 
 serviceMonitor:
-  enabled: true
+  enabled: false
   interval: 30s
   path: null
 
 # Persistent volume claim configuration
-volumeClaimTemplate:
+volumeClaimTemplates:
   enabled: true
-  storageClassName: "standard"
-  storageSize: "2000Gi" # Resizing existing PVCs is not supported and will require manual intervention
+  hot:
+    storageClassName: standard
+    storageSize: 2000Gi
+  cold:
+    storageClassName: null
+    storageSize: null

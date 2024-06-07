@@ -51,22 +51,31 @@ spec:
           args:
             - |
               set -e # Exit immediately if a command exits with a non-zero status
-              if [ "$(ls -A {{ .Values.chain.homeDir }}/data/*.sst 2>/dev/null)" ]; then
+
+              HOME_DIR="{{ .Values.chain.homeDir }}"
+              STORE="{{ include "near-node.store" . }}"
+              COLD_STORE="{{ include "near-node.coldStore" . }}"
+
+              if [ {{ .Values.chain.syncFromSnapshot.enabled }} = "true" ]; then
                 if [ {{ .Values.chain.syncFromSnapshot.force }} = "false" ]; then
-                  echo "Snapshot files already present, skipping download."
+                  {{ include "near-node.snapshotScript" . | nindent 18 }}
                 else
                   echo "Forcing snapshot download..."
-                  rm -rf {{ .Values.chain.homeDir }}/data/*
+                  rm -rf $HOME_DIR/$STORE/*
+                  if [ -d $HOME_DIR/$COLD_STORE ]; then
+                    rm -rf $HOME_DIR/$COLD_STORE/*
+                  fi
                   echo "Old snapshot files removed, starting download..."
                   {{ include "near-node.snapshotScript" . | nindent 18 }}
                 fi
               else
-                echo "No snapshot files found, starting download..."
-                {{ include "near-node.snapshotScript" . | nindent 14 }}
+                echo "Skipping snapshot download..."
               fi
           volumeMounts:
             - name: pvc
               mountPath: {{ .Values.chain.homeDir }}
+            - name: pvc-cold
+              mountPath: {{ .Values.chain.homeDir }}/{{ include "near-node.coldStore" . }}
           resources:
             requests:
               cpu: {{ .Values.podTemplate.resources.requests.cpu }}
@@ -112,11 +121,11 @@ spec:
             items:
               - key: config.json
                 path: config.json
-        {{- if not .Values.volumeClaimTemplate.enabled }}
+        {{- if not .Values.volumeClaimTemplates.enabled }}
         - name: data
           emptyDir: {}
         {{- end }}
-  {{- if .Values.volumeClaimTemplate.enabled }}
+  {{- if .Values.volumeClaimTemplates.enabled }}
   volumeClaimTemplates:
     - metadata:
         name: pvc
@@ -126,6 +135,18 @@ spec:
           - "ReadWriteOnce"
         resources:
           requests:
-            storage: {{ .Values.volumeClaimTemplate.storageSize }}
-        storageClassName: {{ .Values.volumeClaimTemplate.storageClassName }}
+            storage: {{ .Values.volumeClaimTemplates.hot.storageSize }}
+        storageClassName: {{ .Values.volumeClaimTemplates.hot.storageClassName }}
+    {{- if .Values.volumeClaimTemplates.cold.storageClassName }}
+    - metadata:
+        name: pvc-cold
+        namespace: {{ include "near-node.namespace" . }}
+      spec:
+        accessModes:
+          - "ReadWriteOnce"
+        resources:
+          requests:
+            storage: {{ .Values.volumeClaimTemplates.cold.storageSize }}
+        storageClassName: {{ .Values.volumeClaimTemplates.cold.storageClassName }}
+    {{- end }}
   {{- end }}

@@ -140,7 +140,7 @@ view_client_throttle_period:
   secs: 30
   nanos: 0
 trie_viewer_state_size_limit: 50000
-archive: false,
+archive: false
 store:
   path: "data"
   enable_statistics: false

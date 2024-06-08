@@ -80,10 +80,11 @@ Configuration for the store
 Create the snapshot download script
 */}}
 {{- define "isSplitStorageEnabled" -}}
-{{- $chain := default dict .Values.chain -}}
-{{- $configOverrides := default dict $chain.configOverrides -}}
-{{- $splitStorage := default dict $configOverrides.split_storage -}}
-{{- default false $splitStorage.enable_split_storage_view_client -}}
+{{- if and .Values.chain.configOverrides .Values.chain.configOverrides.split_storage .Values.chain.configOverrides.split_storage.enable_split_storage_view_client -}}
+  {{ .Values.chain.configOverrides.split_storage.enable_split_storage_view_client }}
+{{- else -}}
+  false
+{{- end -}}
 {{- end -}}
 
 {{- define "near-node.snapshotScript" -}}
@@ -101,7 +102,7 @@ printf "[near_cf]\ntype = s3\nprovider = AWS\ndownload_url = https://dcf58hz8pnr
 HOME_DIR="{{ .Values.chain.homeDir }}"
 NETWORK="{{ .Values.chain.network }}"
 KIND="{{ .Values.chain.kind }}"
-USE_SPLIT_STORAGE="{{- if include "isSplitStorageEnabled" . -}}true{{- else -}}false{{- end }}"
+USE_SPLIT_STORAGE="{{- include "isSplitStorageEnabled" . -}}"
 STORE="{{ include "near-node.store" . }}"
 COLD_STORE="{{ include "near-node.coldStore" . }}"
 

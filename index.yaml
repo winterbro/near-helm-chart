@@ -3,6 +3,15 @@ entries:
   near-protocol:
   - apiVersion: v2
     appVersion: "1.0"
+    created: "2024-06-08T22:59:32.471094957Z"
+    description: A Helm chart for deploying NEAR Protocol nodes
+    digest: 28e4f46f6ebe489feb5581f496319b941653f0b951cb725871387c7bbfb12d6f
+    name: near-protocol
+    urls:
+    - https://github.com/winterbro/near-helm-chart/releases/download/near-protocol-1.0.6/near-protocol-1.0.6.tgz
+    version: 1.0.6
+  - apiVersion: v2
+    appVersion: "1.0"
     created: "2024-06-08T12:58:56.717400593Z"
     description: A Helm chart for deploying NEAR Protocol nodes
     digest: 1b4de10286fd31798405756e0e84a00051405183fc654be3817f46f82e6c3dfd
@@ -82,4 +91,4 @@ entries:
     urls:
     - https://github.com/winterbro/near-helm-chart/releases/download/near-protocol-0.1.2/near-protocol-0.1.2.tgz
     version: 0.1.2
-generated: "2024-06-08T12:58:56.717449875Z"
+generated: "2024-06-08T22:59:32.471138148Z"

@@ -74,8 +74,10 @@ spec:
           volumeMounts:
             - name: pvc
               mountPath: {{ .Values.chain.homeDir }}
+            {{- if .Values.volumeClaimTemplates.cold.storageClassName }}
             - name: pvc-cold
               mountPath: {{ .Values.chain.homeDir }}/{{ include "near-node.coldStore" . }}
+            {{- end }}
           resources:
             requests:
               cpu: {{ .Values.podTemplate.resources.requests.cpu }}

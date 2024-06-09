@@ -140,9 +140,8 @@ view_client_throttle_period:
   secs: 30
   nanos: 0
 trie_viewer_state_size_limit: 50000
-archive: false
 store:
-  path: "data"
+  path:
   enable_statistics: false
   enable_statistics_export: true
   max_open_files: 10000
@@ -185,10 +184,6 @@ store:
   state_snapshot_config:
     state_snapshot_type: ForReshardingOnly
   state_snapshot_enabled: false
-cold_store:
-  path: "cold-data"
-split_storage:
-  enable_split_storage_view_client: false
 state_sync_enabled: false
 state_sync:
   sync:

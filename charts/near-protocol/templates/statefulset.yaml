@@ -30,7 +30,7 @@ spec:
               if [ -f "{{ .Values.chain.homeDir }}/genesis.json" ]; then
                 echo "Genesis file already present, skipping init."
               else
-                {{ .Values.chain.binary }} --home {{ .Values.chain.homeDir }} init --chain-id {{ .Values.chain.network }} --download-genesis --download-config
+                {{ .Values.chain.binary }} --home {{ .Values.chain.homeDir }} init --chain-id {{ .Values.chain.network }} --download-genesis
               fi
           volumeMounts:
             - name: pvc
@@ -42,7 +42,6 @@ spec:
             limits:
               cpu: {{ .Values.podTemplate.resources.limits.cpu }}
               memory: {{ .Values.podTemplate.resources.limits.memory }}
-        {{- if .Values.chain.syncFromSnapshot.enabled }}
         - name: download-snapshot
           image: ubuntu:24.04
           command:
@@ -52,24 +51,29 @@ spec:
             - |
               set -e # Exit immediately if a command exits with a non-zero status
 
-              HOME_DIR="{{ .Values.chain.homeDir }}"
-              STORE="{{ include "near-node.store" . }}"
-              COLD_STORE="{{ include "near-node.coldStore" . }}"
+              if  [ "{{ .Values.chain.syncFromSnapshot.enabled }}" = "false" ]; then
+                echo "Snapshot sync disabled, skipping..."
+              else
+                HOME_DIR="{{ .Values.chain.homeDir }}"
+                STORE="{{ include "near-node.store" . }}"
+                COLD_STORE="{{ include "near-node.coldStore" . }}"
 
-              if [ {{ .Values.chain.syncFromSnapshot.enabled }} = "true" ]; then
-                if [ {{ .Values.chain.syncFromSnapshot.force }} = "false" ]; then
-                  {{ include "near-node.snapshotScript" . | nindent 18 }}
-                else
-                  echo "Forcing snapshot download..."
-                  rm -rf $HOME_DIR/$STORE/*
-                  if [ -d $HOME_DIR/$COLD_STORE ]; then
-                    rm -rf $HOME_DIR/$COLD_STORE/*
+                if [ "$(ls -A {{ .Values.chain.homeDir }}/$STORE/*.sst 2>/dev/null)" ]; then
+                  if [ {{ .Values.chain.syncFromSnapshot.force }} = "false" ]; then
+                    echo "Snapshot files already present, skipping download."
+                  else
+                    echo "Forcing snapshot download..."
+                    rm -rf $HOME_DIR/$STORE/*
+                    if [ -d $HOME_DIR/$COLD_STORE ]; then
+                      rm -rf $HOME_DIR/$COLD_STORE/*
+                    fi
+                    echo "Old snapshot files removed, starting download..."
+                    {{ include "near-node.snapshotScript" . | nindent 20 }}
                   fi
-                  echo "Old snapshot files removed, starting download..."
+                else
+                  echo "No snapshot files found, starting download..."
                   {{ include "near-node.snapshotScript" . | nindent 18 }}
                 fi
-              else
-                echo "Skipping snapshot download..."
               fi
           volumeMounts:
             - name: pvc
@@ -85,7 +89,6 @@ spec:
             limits:
               cpu: {{ .Values.podTemplate.resources.limits.cpu }}
               memory: {{ .Values.podTemplate.resources.limits.memory }}
-        {{- end }}
       containers:
         - name: run-node
           image: {{ $image }}
@@ -106,6 +109,10 @@ spec:
           volumeMounts:
             - name: pvc
               mountPath: {{ .Values.chain.homeDir }}
+            {{- if .Values.volumeClaimTemplates.cold.storageClassName }}
+            - name: pvc-cold
+              mountPath: {{ .Values.chain.homeDir }}/{{ include "near-node.coldStore" . }}
+            {{- end }}
             - name: config-volume
               mountPath: {{ .Values.chain.homeDir }}/config.json
               subPath: config.json

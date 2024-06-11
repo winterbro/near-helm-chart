@@ -106,6 +106,10 @@ spec:
           volumeMounts:
             - name: pvc
               mountPath: {{ .Values.chain.homeDir }}
+            {{- if .Values.volumeClaimTemplates.cold.storageClassName }}
+            - name: pvc-cold
+              mountPath: {{ .Values.chain.homeDir }}/{{ include "near-node.coldStore" . }}
+            {{- end }}
             - name: config-volume
               mountPath: {{ .Values.chain.homeDir }}/config.json
               subPath: config.json

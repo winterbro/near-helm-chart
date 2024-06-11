@@ -81,9 +81,9 @@ Create the snapshot download script
 */}}
 {{- define "isSplitStorageEnabled" -}}
 {{- if and .Values.chain.configOverrides .Values.chain.configOverrides.split_storage .Values.chain.configOverrides.split_storage.enable_split_storage_view_client -}}
-  {{ .Values.chain.configOverrides.split_storage.enable_split_storage_view_client }}
+  {{ .Values.chain.configOverrides.split_storage.enable_split_storage_view_client | quote }}
 {{- else -}}
-  false
+  "false"
 {{- end -}}
 {{- end -}}
 
@@ -106,7 +106,7 @@ USE_SPLIT_STORAGE="{{- include "isSplitStorageEnabled" . -}}"
 STORE="{{ include "near-node.store" . }}"
 COLD_STORE="{{ include "near-node.coldStore" . }}"
 
-if $USE_SPLIT_STORAGE; then
+if [ "$USE_SPLIT_STORAGE" = "true" ]; then
   echo "Geting date of the latest split storage snapshot"
   rclone copy --config $RCLONE_CONFIG --no-check-certificate near_cf://near-protocol-public/backups/$NETWORK/$KIND/latest_split_storage $HOME_DIR/
 

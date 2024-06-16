@@ -19,8 +19,9 @@ spec:
         {{- include "near-node.selectorLabels" . | nindent 8 }}
     spec:
       initContainers:
-        - name: init-node
+        - name: chain-init
           image: {{ $image }}
+          imagePullPolicy: {{ .Values.podTemplate.imagePullPolicy }}
           command:
             - "sh"
             - "-c"
@@ -44,12 +45,14 @@ spec:
               memory: {{ .Values.podTemplate.resources.limits.memory }}
         - name: download-snapshot
           image: ubuntu:24.04
+          imagePullPolicy: Always
           command:
-            - "sh"
+            - "/bin/bash"
             - "-c"
           args:
             - |
               set -e # Exit immediately if a command exits with a non-zero status
+              set -x # Print commands and their arguments as they are executed
 
               if  [ "{{ .Values.chain.syncFromSnapshot.enabled }}" = "false" ]; then
                 echo "Snapshot sync disabled, skipping..."
@@ -59,8 +62,10 @@ spec:
                 COLD_STORE="{{ include "near-node.coldStore" . }}"
 
                 if [ "$(ls -A {{ .Values.chain.homeDir }}/$STORE/*.sst 2>/dev/null)" ]; then
-                  if [ {{ .Values.chain.syncFromSnapshot.force }} = "false" ]; then
-                    echo "Snapshot files already present, skipping download."
+                    echo "Databases in {{ .Values.chain.homeDir }}/$STORE already exists"
+                  if [ "{{ .Values.chain.syncFromSnapshot.force }}" = "false" ]; then
+                    echo "Snapshot files found, syncing snapshot..."
+                    {{ include "near-node.snapshotScript" . | nindent 18 }}
                   else
                     echo "Forcing snapshot download..."
                     rm -rf $HOME_DIR/$STORE/*
@@ -81,7 +86,7 @@ spec:
             {{- if .Values.volumeClaimTemplates.cold.storageClassName }}
             - name: pvc-cold
               mountPath: {{ .Values.chain.homeDir }}/{{ include "near-node.coldStore" . }}
-            {{- end }}
+            {{- end }}  
           resources:
             requests:
               cpu: {{ .Values.podTemplate.resources.requests.cpu }}
@@ -90,8 +95,9 @@ spec:
               cpu: {{ .Values.podTemplate.resources.limits.cpu }}
               memory: {{ .Values.podTemplate.resources.limits.memory }}
       containers:
-        - name: run-node
+        - name: near-node
           image: {{ $image }}
+          imagePullPolicy: {{ .Values.podTemplate.imagePullPolicy }}
           command:
             - {{ .Values.chain.binary }}
           args:

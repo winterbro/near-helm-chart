@@ -107,15 +107,14 @@ STORE="{{ include "near-node.store" . }}"
 COLD_STORE="{{ include "near-node.coldStore" . }}"
 
 if [ "$USE_SPLIT_STORAGE" = "true" ]; then
-  echo "Geting date of the latest split storage snapshot"
-  rclone copy --config $RCLONE_CONFIG --no-check-certificate near_cf://near-protocol-public/backups/$NETWORK/$KIND/latest_split_storage $HOME_DIR/
+  echo "Getting date of the latest split storage snapshot"
+  rclone copy --config $RCLONE_CONFIG --no-check-certificate near_cf://near-protocol-public/backups/$NETWORK/$KIND/latest_split_storage .
 
-  latest=$(cat $HOME_DIR/latest_split_storage)
-  echo "Latest snapshot date: $latest"
+  LATEST=$(cat latest_split_storage)
+  echo "Latest snapshot date: $LATEST"
 
   echo "Downloading the latest snapshot"
-  rclone copy --config $RCLONE_CONFIG --no-check-certificate --progress --transfers=20 \
-    near_cf://near-protocol-public/backups/$NETWORK/$KIND/$latest $HOME_DIR/
+  rclone copy -vv --config $RCLONE_CONFIG --no-check-certificate --ignore-checksum --progress --transfers=20 --checkers=100 --max-backlog=1000000 near_cf://near-protocol-public/backups/$NETWORK/$KIND/$LATEST $HOME_DIR
 
   # Move and create symlinks for data directories in case of future snapshot downloads
   if $STORE != "hot-data"; then
@@ -133,11 +132,10 @@ else
   echo "Getting date of the latest snapshot"
   rclone copy --config $RCLONE_CONFIG --no-check-certificate near_cf://near-protocol-public/backups/$NETWORK/$KIND/latest $HOME_DIR/
 
-  latest=$(cat $HOME_DIR/latest)
-  echo "Latest snapshot date: $latest"
+  LATEST=$(cat $HOME_DIR/latest)
+  echo "Latest snapshot date: $LATEST"
 
   echo "Downloading the latest snapshot"
-  rclone copy --config $RCLONE_CONFIG --no-check-certificate --progress --transfers=20 \
-    near_cf://near-protocol-public/backups/$NETWORK/$KIND/$latest $HOME_DIR/$STORE/
+  rclone copy --config $RCLONE_CONFIG --no-check-certificate --ignore-checksum --progress --transfers=20 --checkers=40 --max-backlog=100000 near_cf://near-protocol-public/backups/$NETWORK/$KIND/$LATEST $HOME_DIR/$STORE/
 fi
 {{- end -}}

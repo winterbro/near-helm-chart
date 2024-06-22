@@ -64,8 +64,7 @@ spec:
                 if [ "$(ls -A {{ .Values.chain.homeDir }}/$STORE/*.sst 2>/dev/null)" ]; then
                     echo "Databases in {{ .Values.chain.homeDir }}/$STORE already exists"
                   if [ "{{ .Values.chain.syncFromSnapshot.force }}" = "false" ]; then
-                    echo "Snapshot files found, syncing snapshot..."
-                    {{ include "near-node.snapshotScript" . | nindent 18 }}
+                    echo "Snapshot files found, skipping..."
                   else
                     echo "Forcing snapshot download..."
                     rm -rf $HOME_DIR/$STORE/*

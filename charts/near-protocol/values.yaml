@@ -11,9 +11,12 @@ chain:
   network: testnet # mainnet or testnet
   binary: neard
   homeDir: /data/.near
+
+  # Snapshot sync configuration
   syncFromSnapshot:
     enabled: true
-    force: false
+    resync: false # When enabled, will rclone sync snapshot files if already present
+    force: false # When enabled, will remove existing snapshot files and re-download
 
   # Node configuration overrides
   configOverrides: {}
@@ -37,13 +40,6 @@ chain:
     #   path: "cold-data"
     # split_storage:
     #   enable_split_storage_view_client: true
-
-  configOverrides:
-    rpc:
-      addr: "0.0.0.0:3030"
-      prometheus_addr: "0.0.0.0:9090"
-    network:
-      addr: "0.0.0.0:24567"
 
 # Pod configuration
 podTemplate:

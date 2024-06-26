@@ -1,8 +1,15 @@
-# Default values for near-node.
 nameOverride: null
 fullnameOverride: near-testnet
 namespaceOverride: near
+
 replicas: 1
+podManagementPolicy: Parallel
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    partition: 0
+    maxUnavailable: 1
+
 logLevel: info # debug, info, warn or error
 
 # Blockchain specific configuration

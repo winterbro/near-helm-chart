@@ -62,11 +62,17 @@ spec:
                 COLD_STORE="{{ include "near-node.coldStore" . }}"
 
                 if [ "$(ls -A {{ .Values.chain.homeDir }}/$STORE/*.sst 2>/dev/null)" ]; then
-                    echo "Databases in {{ .Values.chain.homeDir }}/$STORE already exists"
+                  echo "Databases in {{ .Values.chain.homeDir }}/$STORE already exists"
+
                   if [ "{{ .Values.chain.syncFromSnapshot.force }}" = "false" ]; then
-                    echo "Snapshot files found, skipping..."
+                    if [ "{{ .Values.chain.syncFromSnapshot.resync }}" = "true" ]; then
+                      echo "Resyncing snapshot files..."
+                      {{ include "near-node.snapshotScript" . | nindent 20 }}
+                    else
+                      echo "Snapshot files found, skipping download..."
+                    fi
                   else
-                    echo "Forcing snapshot download..."
+                    echo "Forcing new snapshot download..."
                     rm -rf $HOME_DIR/$STORE/*
                     if [ -d $HOME_DIR/$COLD_STORE ]; then
                       rm -rf $HOME_DIR/$COLD_STORE/*
@@ -85,7 +91,7 @@ spec:
             {{- if .Values.volumeClaimTemplates.cold.storageClassName }}
             - name: pvc-cold
               mountPath: {{ .Values.chain.homeDir }}/{{ include "near-node.coldStore" . }}
-            {{- end }}  
+            {{- end }}
           resources:
             requests:
               cpu: {{ .Values.podTemplate.resources.requests.cpu }}

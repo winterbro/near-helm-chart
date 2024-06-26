@@ -13,10 +13,10 @@ spec:
   podManagementPolicy: {{ .Values.podManagementPolicy }}
   updateStrategy:
     type: {{ .Values.updateStrategy.type }}
-    {{- with .Values.updateStrategy.rollingUpdate }}
+    {{- if eq "RollingUpdate" .Values.updateStrategy.type }}
     rollingUpdate:
-      partition: {{ .partition }}
-      maxUnavailable: {{ .maxUnavailable }}
+      partition: {{ .Values.updateStrategy.rollingUpdate.partition }}
+      maxUnavailable: {{ .Values.updateStrategy.rollingUpdate.maxUnavailable }}
     {{- end }}
   selector:
     matchLabels:

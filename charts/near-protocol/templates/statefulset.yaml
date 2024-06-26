@@ -10,6 +10,14 @@ metadata:
 spec:
   serviceName: {{ include "near-node.fullname" . }}
   replicas: {{ .Values.replicas }}
+  podManagementPolicy: {{ .Values.podManagementPolicy }}
+  updateStrategy:
+    type: {{ .Values.updateStrategy.type }}
+    {{- with .Values.updateStrategy.rollingUpdate }}
+    rollingUpdate:
+      partition: {{ .partition }}
+      maxUnavailable: {{ .maxUnavailable }}
+    {{- end }}
   selector:
     matchLabels:
       {{- include "near-node.selectorLabels" . | nindent 6 }}

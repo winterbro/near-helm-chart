@@ -114,7 +114,7 @@ if [ "$USE_SPLIT_STORAGE" = "true" ]; then
   echo "Latest snapshot date: $LATEST"
 
   echo "Downloading the latest snapshot"
-  rclone sync -vv --config $RCLONE_CONFIG --no-check-certificate --progress --transfers=20 --checkers=100 --max-backlog=1000000 --checksum near_cf://near-protocol-public/backups/$NETWORK/$KIND/$LATEST $HOME_DIR
+  rclone sync -vv --config $RCLONE_CONFIG --no-check-certificate --progress --transfers=20 --checkers=100 --max-backlog=1000000 --checksum --delete-during near_cf://near-protocol-public/backups/$NETWORK/$KIND/$LATEST $HOME_DIR
 
   # Move and create symlinks for data directories in case of future snapshot downloads
   if $STORE != "hot-data"; then
@@ -136,6 +136,6 @@ else
   echo "Latest snapshot date: $LATEST"
 
   echo "Downloading the latest snapshot"
-  rclone sync -vv --config $RCLONE_CONFIG --no-check-certificate --progress --transfers=20 --checkers=100 --max-backlog=1000000 --checksum near_cf://near-protocol-public/backups/$NETWORK/$KIND/$LATEST $HOME_DIR/$STORE/
+  rclone sync -vv --config $RCLONE_CONFIG --no-check-certificate --progress --transfers=20 --checkers=100 --max-backlog=1000000 --checksum --delete-during near_cf://near-protocol-public/backups/$NETWORK/$KIND/$LATEST $HOME_DIR/$STORE/
 fi
 {{- end -}}

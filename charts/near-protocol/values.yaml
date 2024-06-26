@@ -3,9 +3,10 @@ fullnameOverride: near-testnet
 namespaceOverride: near
 
 replicas: 1
-podManagementPolicy: Parallel
+podManagementPolicy: Parallel # "Parallel" or "OrderedReady"
 updateStrategy:
-  type: RollingUpdate
+  type: RollingUpdate # "OnDelete" or "RollingUpdate"
+  # Only used when type is "RollingUpdate"
   rollingUpdate:
     partition: 0
     maxUnavailable: 1

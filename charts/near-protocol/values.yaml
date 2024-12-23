@@ -1,15 +1,14 @@
-nameOverride: null
-fullnameOverride: near-testnet
-namespaceOverride: near
+nameOverride: ""
+fullnameOverride: ""
+namespaceOverride: ""
 
 replicas: 1
-podManagementPolicy: Parallel # "Parallel" or "OrderedReady"
+podManagementPolicy: OrderedReady # "Parallel" or "OrderedReady"
 updateStrategy:
   type: RollingUpdate # "OnDelete" or "RollingUpdate"
   # Only used when type is "RollingUpdate"
   rollingUpdate:
     partition: 0
-    maxUnavailable: 1
 
 logLevel: info # debug, info, warn or error
 
@@ -51,15 +50,15 @@ chain:
 
 # Pod configuration
 podTemplate:
-  image: nearprotocol/nearcore:1.39.1
+  image: nearprotocol/nearcore
   imagePullPolicy: Always
-  resources:
-    requests:
-      cpu: 1
-      memory: 12Gi
-    limits:
-      cpu: 2
-      memory: 24Gi
+  resources: {}
+    # requests:
+    #   cpu: 8000m
+    #   memory: 16Gi
+    # limits:
+    #   cpu: 12000m
+    #   memory: 28Gi
 
 # Service configuration
 service:

@@ -21,7 +21,7 @@ rpc:
   experimental_debug_pages_src_path:
 telemetry:
   endpoints:
-  - https://explorer.testnet.near.org/api/nodes
+  - https://telemetry.nearone.org/nodes
   reporting_interval:
     secs: 10
     nanos: 0
@@ -84,10 +84,10 @@ consensus:
     nanos: 100000000
   min_block_production_delay:
     secs: 1
-    nanos: 0
+    nanos: 300000000
   max_block_production_delay:
-    secs: 2
-    nanos: 500000000
+    secs: 3
+    nanos: 0
   max_block_wait_delay:
     secs: 6
     nanos: 0
@@ -145,12 +145,21 @@ store:
   enable_statistics: false
   enable_statistics_export: true
   max_open_files: 10000
-  col_state_cache_size: 536870912
+  col_state_cache_size: 3221225472
+  col_flat_state_cache_size: 134217728
   block_size: 16384
   trie_cache:
-    default_max_bytes: 50000000
+    default_max_bytes: 500000000
     per_shard_max_bytes:
+      s1.v1: 50000000
       s3.v1: 3000000000
+      s1.v2: 50000000
+      s2.v2: 3000000000
+      s4.v2: 3000000000
+      s1.v3: 50000000
+      s2.v3: 1500000000
+      s3.v3: 1500000000
+      s5.v3: 3000000000
     shard_cache_deletions_queue_capacity: 100000
   view_trie_cache:
     default_max_bytes: 50000000
@@ -170,13 +179,11 @@ store:
   - receiver: claim.sweat
     sender: ''
     method_name: claim
-  background_migration_threads: 8
-  flat_storage_creation_enabled: true
-  flat_storage_creation_period:
-    secs: 1
-    nanos: 0
+  load_mem_tries_for_shards: []
+  load_mem_tries_for_tracked_shards: false
+  state_snapshot_config:
+    state_snapshot_type: ForReshardingOnly
   state_snapshot_enabled: false
-  state_snapshot_compaction_enabled: false
 state_sync_enabled: true
 state_sync:
   sync:

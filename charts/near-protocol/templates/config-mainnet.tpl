@@ -21,7 +21,7 @@ rpc:
   experimental_debug_pages_src_path:
 telemetry:
   endpoints:
-  - https://explorer.mainnet.near.org/api/nodes
+  - https://telemetry.nearone.org/nodes
   reporting_interval:
     secs: 10
     nanos: 0

@@ -9,6 +9,7 @@ metadata:
   labels:
     {{- include "near-node.labels" . | nindent 4 }}
 spec:
+  fallbackScrapeProtocol: {{ .Values.serviceMonitor.fallbackScrapeProtocol }}
   selector:
     matchLabels:
       {{- include "near-node.selectorLabels" . | nindent 6 }}

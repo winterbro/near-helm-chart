@@ -65,9 +65,13 @@ service:
   p2pTemplate:
     type: NodePort
     port: 24567
+    additionalAnnotations: {}
+    additionalLabels: {}
   rpcTemplate:
     type: ClusterIP
     port: 3030
+    additionalAnnotations: {}
+    additionalLabels: {}
   metrics:
     enabled: true
     type: ClusterIP

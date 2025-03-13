@@ -16,7 +16,6 @@ spec:
     {{- if eq "RollingUpdate" .Values.updateStrategy.type }}
     rollingUpdate:
       partition: {{ .Values.updateStrategy.rollingUpdate.partition }}
-      maxUnavailable: {{ .Values.updateStrategy.rollingUpdate.maxUnavailable }}
     {{- end }}
   selector:
     matchLabels:
@@ -44,13 +43,10 @@ spec:
           volumeMounts:
             - name: pvc
               mountPath: {{ .Values.chain.homeDir }}
+          {{- if .Values.podTemplate.resources }}
           resources:
-            requests:
-              cpu: {{ .Values.podTemplate.resources.requests.cpu }}
-              memory: {{ .Values.podTemplate.resources.requests.memory }}
-            limits:
-              cpu: {{ .Values.podTemplate.resources.limits.cpu }}
-              memory: {{ .Values.podTemplate.resources.limits.memory }}
+            {{- .Values.podTemplate.resources | toYaml | nindent 10 }}
+          {{- end }}
         - name: download-snapshot
           image: ubuntu:24.04
           imagePullPolicy: Always
@@ -100,13 +96,10 @@ spec:
             - name: pvc-cold
               mountPath: {{ .Values.chain.homeDir }}/{{ include "near-node.coldStore" . }}
             {{- end }}
+          {{- if .Values.podTemplate.resources }}
           resources:
-            requests:
-              cpu: {{ .Values.podTemplate.resources.requests.cpu }}
-              memory: {{ .Values.podTemplate.resources.requests.memory }}
-            limits:
-              cpu: {{ .Values.podTemplate.resources.limits.cpu }}
-              memory: {{ .Values.podTemplate.resources.limits.memory }}
+            {{- .Values.podTemplate.resources | toYaml | nindent 10 }}
+          {{- end }}
       containers:
         - name: near-node
           image: {{ $image }}
@@ -135,13 +128,10 @@ spec:
             - name: config-volume
               mountPath: {{ .Values.chain.homeDir }}/config.json
               subPath: config.json
+          {{- if .Values.podTemplate.resources }}
           resources:
-            requests:
-              cpu: {{ .Values.podTemplate.resources.requests.cpu }}
-              memory: {{ .Values.podTemplate.resources.requests.memory }}
-            limits:
-              cpu: {{ .Values.podTemplate.resources.limits.cpu }}
-              memory: {{ .Values.podTemplate.resources.limits.memory }}
+            {{- .Values.podTemplate.resources | toYaml | nindent 10 }}
+          {{- end }}
       volumes:
         - name: config-volume
           configMap:

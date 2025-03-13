@@ -5,8 +5,15 @@ kind: Service
 metadata:
   name: {{ include "near-node.fullname" $ }}-p2p-{{ $i }}
   namespace: {{ include "near-node.namespace" $ }}
+  {{- if $.Values.service.p2pTemplate.additionalAnnotations }}
+  annotations:
+    {{- $.Values.service.p2pTemplate.additionalAnnotations | toYaml | nindent 4 }}
+  {{- end }}
   labels:
     {{- include "near-node.labels" $ | nindent 4 }}
+    {{- if $.Values.service.p2pTemplate.additionalLabels }}
+    {{- $.Values.service.p2pTemplate.additionalLabels | toYaml | nindent 4 }}
+    {{- end }}
 spec:
   type: {{ $.Values.service.p2pTemplate.type }}
   ports:
@@ -23,8 +30,15 @@ kind: Service
 metadata:
   name: {{ include "near-node.fullname" . }}-rpc
   namespace: {{ include "near-node.namespace" . }}
+  {{- if .Values.service.rpcTemplate.additionalAnnotations }}
+  annotations:
+    {{- .Values.service.rpcTemplate.additionalAnnotations | toYaml | nindent 4 }}
+  {{- end }}
   labels:
     {{- include "near-node.labels" . | nindent 4 }}
+    {{- if .Values.service.rpcTemplate.additionalLabels }}
+    {{- .Values.service.rpcTemplate.additionalLabels | toYaml | nindent 4 }}
+    {{- end }}
 spec:
   type: {{ .Values.service.rpcTemplate.type }}
   ports:

@@ -56,45 +56,21 @@ spec:
           args:
             - |
               set -e # Exit immediately if a command exits with a non-zero status
-              set -x # Print commands and their arguments as they are executed
 
-              if  [ "{{ .Values.chain.syncFromSnapshot.enabled }}" = "false" ]; then
-                echo "Snapshot sync disabled, skipping..."
+              apt update && apt install -y rclone curl
+
+              if [ "$(ls -A {{ .Values.chain.homeDir }}/data/*.sst 2>/dev/null)" ]; then
+                echo "Databases in {{ .Values.chain.homeDir }}/data already exists"
               else
-                HOME_DIR="{{ .Values.chain.homeDir }}"
-                STORE="{{ include "near-node.store" . }}"
-                COLD_STORE="{{ include "near-node.coldStore" . }}"
-
-                if [ "$(ls -A {{ .Values.chain.homeDir }}/$STORE/*.sst 2>/dev/null)" ]; then
-                  echo "Databases in {{ .Values.chain.homeDir }}/$STORE already exists"
-
-                  if [ "{{ .Values.chain.syncFromSnapshot.force }}" = "false" ]; then
-                    if [ "{{ .Values.chain.syncFromSnapshot.resync }}" = "true" ]; then
-                      echo "Resyncing snapshot files..."
-                      {{ include "near-node.snapshotScript" . | nindent 20 }}
-                    else
-                      echo "Snapshot files found, skipping download..."
-                    fi
-                  else
-                    echo "Forcing new snapshot download..."
-                    rm -rf $HOME_DIR/$STORE/*
-                    if [ -d $HOME_DIR/$COLD_STORE ]; then
-                      rm -rf $HOME_DIR/$COLD_STORE/*
-                    fi
-                    echo "Old snapshot files removed, starting download..."
-                    {{ include "near-node.snapshotScript" . | nindent 20 }}
-                  fi
-                else
-                  echo "No snapshot files found, starting download..."
-                  {{ include "near-node.snapshotScript" . | nindent 18 }}
-                fi
+                echo "No snapshot files found, starting download..."
+                {{ include "near-node.snapshotScript" . | nindent 16 }}
               fi
           volumeMounts:
             - name: pvc
               mountPath: {{ .Values.chain.homeDir }}
             {{- if .Values.volumeClaimTemplates.cold.storageClassName }}
             - name: pvc-cold
-              mountPath: {{ .Values.chain.homeDir }}/{{ include "near-node.coldStore" . }}
+              mountPath: {{ .Values.chain.homeDir }}/data/cold-data
             {{- end }}
           {{- if .Values.podTemplate.resources }}
           resources:
@@ -123,7 +99,7 @@ spec:
               mountPath: {{ .Values.chain.homeDir }}
             {{- if .Values.volumeClaimTemplates.cold.storageClassName }}
             - name: pvc-cold
-              mountPath: {{ .Values.chain.homeDir }}/{{ include "near-node.coldStore" . }}
+              mountPath: {{ .Values.chain.homeDir }}/data/cold-data
             {{- end }}
             - name: config-volume
               mountPath: {{ .Values.chain.homeDir }}/config.json

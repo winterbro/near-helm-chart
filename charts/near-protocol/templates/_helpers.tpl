@@ -57,88 +57,77 @@ app.kubernetes.io/name: {{ include "near-node.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
-{{/*
-Configuration for the store
-*/}}
-{{- define "near-node.store" -}}
-{{- if and .Values.chain.configOverrides .Values.chain.configOverrides.store .Values.chain.configOverrides.store.path -}}
-  {{ .Values.chain.configOverrides.store.path }}
-{{- else -}}
-  "data"
-{{- end -}}
-{{- end }}
-
-{{- define "near-node.coldStore" -}}
-{{- if and .Values.chain.configOverrides .Values.chain.configOverrides.cold_store .Values.chain.configOverrides.cold_store.path -}}
-  {{ .Values.chain.configOverrides.cold_store.path }}
-{{- else -}}
-  "cold-data"
-{{- end -}}
-{{- end }}
-
-{{/*
-Create the snapshot download script
-*/}}
-{{- define "isSplitStorageEnabled" -}}
-{{- if and .Values.chain.configOverrides .Values.chain.configOverrides.split_storage .Values.chain.configOverrides.split_storage.enable_split_storage_view_client -}}
-  {{ .Values.chain.configOverrides.split_storage.enable_split_storage_view_client | quote }}
-{{- else -}}
-  "false"
-{{- end -}}
-{{- end -}}
-
 {{- define "near-node.snapshotScript" -}}
-# Install and configure rclone
-echo "Installing and configuring rclone"
-apt update && apt install -y rclone
+{{- if .Values.chain.snapshotScript -}}
+{{ .Values.chain.snapshotScript }}
+{{- else -}}
+HTTP_URL="https://snapshot.neardata.xyz"
 
-RCLONE_CONFIG=$HOME/.config/rclone/rclone.conf
+: "${CHAIN_ID:={{ .Values.chain.network }}}"
+: "${THREADS:=16}"
+: "${TPSLIMIT:=4096}"
+: "${BWLIMIT:=10G}"
+: "${RPC_TYPE:={{ .Values.chain.kind }}}"
+: "${DATA_PATH:={{ .Values.chain.homeDir }}/data}"
+: "${RETRIES:=20}"
+: "${CHECKERS:=$THREADS}"
+: "${LOW_LEVEL_RETRIES:=10}"
+: "${ENABLE_HTTP_NO_HEAD:=false}"
 
-mkdir -p $HOME/.config/rclone/
-touch $RCLONE_CONFIG
-printf "[near_cf]\ntype = s3\nprovider = AWS\ndownload_url = https://dcf58hz8pnro2.cloudfront.net/\nacl = public-read\nserver_side_encryption = AES256\nregion = ca-central-1\n" >> $RCLONE_CONFIG
+PREFIX="$CHAIN_ID/$RPC_TYPE"
 
-# Set node variables
-HOME_DIR="{{ .Values.chain.homeDir }}"
-NETWORK="{{ .Values.chain.network }}"
-KIND="{{ .Values.chain.kind }}"
-USE_SPLIT_STORAGE="{{- include "isSplitStorageEnabled" . -}}"
-STORE="{{ include "near-node.store" . }}"
-COLD_STORE="{{ include "near-node.coldStore" . }}"
-
-if [ "$USE_SPLIT_STORAGE" = "true" ]; then
-  echo "Getting date of the latest split storage snapshot"
-  rclone copy --config $RCLONE_CONFIG --no-check-certificate near_cf://near-protocol-public/backups/$NETWORK/$KIND/latest_split_storage .
-
-  LATEST=$(cat latest_split_storage)
-  echo "Latest snapshot date: $LATEST"
-
-  echo "Downloading cold snapshot"
-  rclone sync -vv --config $RCLONE_CONFIG --no-check-certificate --progress --transfers=20 --checkers=100 --max-backlog=1000000 --size-only --delete-during near_cf://near-protocol-public/backups/$NETWORK/$KIND/$LATEST/cold-data $HOME_DIR/$COLD_STORE
-
-  echo "Downloading hot snapshot"
-  rclone sync -vv --config $RCLONE_CONFIG --no-check-certificate --progress --transfers=20 --checkers=100 --max-backlog=1000000 --size-only --delete-during near_cf://near-protocol-public/backups/$NETWORK/$KIND/$LATEST/hot-data $HOME_DIR/$STORE
-
-  # Move and create symlinks for data directories in case of future snapshot downloads
-  if $STORE != "hot-data"; then
-    mv $HOME_DIR/hot-data $HOME_DIR/$STORE
-    ln -s $HOME_DIR/hot-data $HOME_DIR/$STORE
-    echo "Moved hot-data to $STORE"
-  fi
-
-  if $COLD_STORE != "cold-data"; then
-    mv $HOME_DIR/cold-data $HOME_DIR/$COLD_STORE
-    ln -s $HOME_DIR/cold-data $HOME_DIR/$COLD_STORE
-    echo "Moved cold-data to $COLD_STORE"
-  fi
-else
-  echo "Getting date of the latest snapshot"
-  rclone copy --config $RCLONE_CONFIG --no-check-certificate near_cf://near-protocol-public/backups/$NETWORK/$KIND/latest $HOME_DIR/
-
-  LATEST=$(cat $HOME_DIR/latest)
-  echo "Latest snapshot date: $LATEST"
-
-  echo "Downloading the latest snapshot"
-  rclone sync -vv --config $RCLONE_CONFIG --no-check-certificate --progress --transfers=20 --checkers=100 --max-backlog=1000000 --checksum --delete-during near_cf://near-protocol-public/backups/$NETWORK/$KIND/$LATEST $HOME_DIR/$STORE/
+HTTP_NO_HEAD_FLAG=""
+if [ "$ENABLE_HTTP_NO_HEAD" = true ]; then
+  HTTP_NO_HEAD_FLAG="--http-no-head"
 fi
+
+LATEST=$(curl -s "$HTTP_URL/$PREFIX/latest.txt")
+echo "Latest snapshot block: $LATEST"
+
+: "${BLOCK:=$LATEST}"
+
+main() {
+  mkdir -p "$DATA_PATH"
+  echo "Snapshot block: $BLOCK"
+
+  if [ -d "$DATA_PATH" ] && [ -n "$(ls -A "$DATA_PATH")" ]; then
+    echo "Data path exists and is not empty, skipping --http-no-head flag on rclone"
+    HTTP_NO_HEAD_FLAG=""
+  fi
+
+  FILES_PATH="/tmp/files.txt"
+  curl -s "$HTTP_URL/$PREFIX/$BLOCK/files.txt" -o "$FILES_PATH"
+
+  EXPECTED_NUM_FILES=$(wc -l < "$FILES_PATH")
+  echo "Downloading $EXPECTED_NUM_FILES files with $THREADS threads"
+
+  rclone copy \
+    --no-traverse \
+    $HTTP_NO_HEAD_FLAG \
+    --multi-thread-streams 1 \
+    --tpslimit "$TPSLIMIT" \
+    --bwlimit "$BWLIMIT" \
+    --max-backlog 1000000 \
+    --transfers "$THREADS" \
+    --checkers "$CHECKERS" \
+    --buffer-size 128M \
+    --http-url "$HTTP_URL" \
+    --files-from="$FILES_PATH" \
+    --retries "$RETRIES" \
+    --retries-sleep 1s \
+    --low-level-retries "$LOW_LEVEL_RETRIES" \
+    --progress \
+    :http:"$PREFIX/$BLOCK/" "$DATA_PATH"
+
+  ACTUAL_NUM_FILES=$(find "$DATA_PATH" -type f | wc -l)
+  echo "Downloaded $ACTUAL_NUM_FILES files, expected $EXPECTED_NUM_FILES"
+
+  if [[ "$ACTUAL_NUM_FILES" -ne "$EXPECTED_NUM_FILES" ]]; then
+    echo "Error: Downloaded files count mismatch"
+    exit 1
+  fi
+}
+
+main "$@"
+{{- end -}}
 {{- end -}}

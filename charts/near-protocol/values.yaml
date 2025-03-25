@@ -14,16 +14,13 @@ logLevel: info # debug, info, warn or error
 
 # Blockchain specific configuration
 chain:
-  kind: rpc # rpc or archive
-  network: testnet # mainnet or testnet
+  kind: rpc # rpc or fast-rpc
+  network: mainnet # mainnet or testnet
   binary: neard
   homeDir: /data/.near
 
   # Snapshot sync configuration
-  syncFromSnapshot:
-    enabled: true
-    resync: false # When enabled, will rclone sync snapshot files if already present
-    force: false # When enabled, will remove existing snapshot files and re-download
+  snapshotScript: null
 
   # Node configuration overrides
   configOverrides: {}
